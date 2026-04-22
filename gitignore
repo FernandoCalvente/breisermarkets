@@ -1,0 +1,7 @@
+*.db
+*.json
+__pycache__/
+*.pyc
+/data/
+acme.json
+.env
