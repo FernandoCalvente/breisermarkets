@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111010">
+<title>BreiserMarkets</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #111010;
+  --s1:       #1c1b1b;
+  --s2:       #252424;
+  --s3:       #2e2d2d;
+  --border:   #333;
+  --gold:     #f0c040;
+  --gold2:    #d4a82a;
+  --text:     #f5f0e8;
+  --muted:    #888;
+  --dim:      #444;
+  --danger:   #e05555;
+  --success:  #4dbe7a;
+  --cash:     #4dbe7a;
+  --card:     #5b9cf0;
+  --r:        12px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100%; }
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 10px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: .5px; color: var(--gold); }
+.app-logo span { color: var(--text); font-weight: 400; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.market-chip {
+  background: var(--s2); border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; gap: 5px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.market-chip strong { color: var(--text); font-size: 12px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--s2); color: var(--text); font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+/* ── CART BAR ── */
+.cart-bar {
+  background: var(--gold); color: #111; padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; flex-shrink: 0; transition: background .15s;
+}
+.cart-bar:active { background: var(--gold2); }
+.cart-bar.hidden { display: none; }
+.cart-bar-left { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.cart-badge { background: #111; color: var(--gold); border-radius: 20px; padding: 2px 8px; font-size: 12px; font-weight: 700; }
+.cart-bar-total { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+
+/* ── TABS ── */
+.tabs {
+  display: flex; background: var(--s1); border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.tab { flex: 1; padding: 11px 6px; text-align: center; font-size: 11px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; letter-spacing: .3px; }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── SCROLL AREA ── */
+.scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── SECTION ── */
+.section { display: none; padding: 14px; }
+.section.active { display: block; }
+
+/* ── SEARCH ── */
+.search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.search-input {
+  flex: 1; background: var(--s1); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
+}
+.search-input:focus { border-color: var(--gold); }
+.filter-sel { background: var(--s1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 10px; color: var(--text); font-size: 13px; outline: none; }
+
+/* ── PRODUCT GRID ── */
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.product-card {
+  background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden;
+  display: flex; flex-direction: column; cursor: pointer; transition: border-color .15s, transform .1s;
+  active: transform: scale(.97);
+}
+.product-card:active { transform: scale(.97); border-color: var(--gold); }
+
+.product-img {
+  width: 100%; aspect-ratio: 3/4; object-fit: cover; background: var(--s2);
+  display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--dim);
+  position: relative; overflow: hidden;
+}
+.product-img img { width: 100%; height: 100%; object-fit: cover; }
+.product-img .no-img { position: absolute; font-size: 36px; }
+
+.product-info { padding: 10px 10px 8px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.product-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; line-height: 1.2; }
+.product-cat  { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.product-price { font-size: 14px; color: var(--gold); font-weight: 600; margin-top: 2px; }
+
+.size-chips { padding: 0 10px 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+.size-chip {
+  padding: 4px 9px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--s2); font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all .12s; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.size-chip .sc-stock { font-size: 9px; color: var(--muted); font-weight: 400; }
+.size-chip:active:not(.oos) { border-color: var(--gold); background: rgba(240,192,64,.12); }
+.size-chip.oos { opacity: .3; cursor: not-allowed; }
+.size-chip.in-cart { border-color: var(--gold); background: rgba(240,192,64,.15); color: var(--gold); }
+
+/* ── CART SHEET ── */
+.sheet-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; backdrop-filter: blur(3px);
+}
+.sheet-overlay.open { display: block; }
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; background: var(--s1);
+  border-radius: 20px 20px 0 0; border-top: 1px solid var(--border);
+  max-height: 85vh; display: flex; flex-direction: column;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom: var(--safe-bottom);
+  z-index: 201;
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 36px; height: 4px; background: var(--s3); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.sheet-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: var(--gold); padding: 14px 18px 10px; flex-shrink: 0; }
+.sheet-scroll { flex: 1; overflow-y: auto; padding: 0 18px; }
+.sheet-footer { padding: 14px 18px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* ── CART ITEMS ── */
+.cart-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cart-thumb { width: 50px; height: 65px; border-radius: 8px; object-fit: cover; background: var(--s2); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--dim); }
+.cart-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cart-info { flex: 1; min-width: 0; }
+.cart-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.cart-price { font-size: 12px; color: var(--gold); margin-top: 3px; }
+.cart-qty-ctrl { display: flex; align-items: center; gap: 8px; }
+.qty-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: var(--s2); color: var(--text); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.qty-val { font-weight: 700; font-size: 15px; min-width: 20px; text-align: center; }
+.remove-btn { color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px; }
+
+/* ── PAYMENT TOGGLE ── */
+.payment-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+.pay-opt {
+  flex: 1; padding: 11px; border-radius: 10px; border: 2px solid var(--border);
+  background: var(--s2); text-align: center; cursor: pointer; transition: all .15s;
+  font-weight: 600; font-size: 13px; color: var(--muted);
+}
+.pay-opt.active.cash { border-color: var(--cash); color: var(--cash); background: rgba(77,190,122,.1); }
+.pay-opt.active.card { border-color: var(--card); color: var(--card); background: rgba(91,156,240,.1); }
+
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.total-label { font-size: 14px; color: var(--muted); }
+.total-val { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--gold); }
+
+/* ── BUTTONS ── */
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 18px; border-radius: 12px; border: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: all .15s; width: 100%; }
+.btn-primary { background: var(--gold); color: #111; }
+.btn-primary:active { background: var(--gold2); }
+.btn-ghost { background: var(--s2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: rgba(224,85,85,.12); color: var(--danger); border: 1px solid rgba(224,85,85,.25); }
+.btn-sm { padding: 8px 14px; font-size: 13px; width: auto; border-radius: 8px; }
+.btn-row { display: flex; gap: 8px; }
+
+/* ── SALES LIST ── */
+.day-header { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; padding: 8px 0 6px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+.day-summary { font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+
+.sale-card {
+  background: var(--s1); border: 1px solid var(--border); border-radius: var(--r);
+  margin-bottom: 10px; overflow: hidden;
+}
+.sale-header { padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.sale-time { font-size: 12px; color: var(--muted); }
+.sale-total { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--gold); }
+.pay-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+.pay-badge.cash { background: rgba(77,190,122,.15); color: var(--cash); }
+.pay-badge.card { background: rgba(91,156,240,.15); color: var(--card); }
+.sale-items-list { border-top: 1px solid var(--border); }
+.sale-item-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--s3); }
+.sale-item-thumb { width: 36px; height: 46px; border-radius: 6px; object-fit: cover; background: var(--s2); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--dim); }
+.sale-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.sale-item-info { flex: 1; min-width: 0; }
+.sale-item-name { font-size: 13px; font-weight: 500; }
+.sale-item-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.sale-item-price { font-size: 13px; color: var(--gold); font-weight: 600; }
+.sale-actions { padding: 10px 14px; display: flex; gap: 8px; }
+
+/* ── STOCK SECTION ── */
+.stock-table { width: 100%; border-collapse: collapse; }
+.stock-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+.stock-table td { padding: 10px; border-bottom: 1px solid var(--s2); font-size: 13px; vertical-align: middle; }
+.stock-thumb { width: 36px; height: 46px; border-radius: 6px; object-fit: cover; background: var(--s2); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--dim); }
+.stock-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── ADMIN SECTION ── */
+.admin-section { margin-bottom: 20px; }
+.admin-section-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+
+.product-admin-card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); display: flex; gap: 12px; padding: 12px; margin-bottom: 10px; align-items: center; }
+.product-admin-thumb { width: 50px; height: 65px; border-radius: 8px; flex-shrink: 0; background: var(--s2); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--dim); }
+.product-admin-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.product-admin-info { flex: 1; min-width: 0; }
+.product-admin-name { font-weight: 600; font-size: 14px; }
+.product-admin-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.product-admin-actions { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── MODAL ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 300; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--s1); border-radius: 20px 20px 0 0; border-top: 1px solid var(--border); width: 100%; max-height: 92vh; overflow-y: auto; padding: 0 18px 32px; padding-bottom: calc(32px + var(--safe-bottom)); }
+.modal-handle { width: 36px; height: 4px; background: var(--s3); border-radius: 2px; margin: 12px auto 14px; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--gold); margin-bottom: 18px; }
+
+/* ── FORM ── */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  width: 100%; background: var(--s2); border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: border-color .15s;
+}
+.field input:focus, .field select:focus { border-color: var(--gold); }
+.field select option { background: var(--s1); }
+
+.sizes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.size-row { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.size-row label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.size-row input { text-align: center; padding: 8px 4px; font-size: 14px; }
+
+/* ── MARKET SELECTOR ── */
+.market-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
+.market-opt {
+  padding: 14px 16px; background: var(--s2); border: 2px solid var(--border); border-radius: 12px;
+  cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all .15s;
+}
+.market-opt:active, .market-opt.selected { border-color: var(--gold); background: rgba(240,192,64,.08); }
+.market-opt-name { font-weight: 600; font-size: 15px; }
+.market-opt-check { color: var(--gold); font-size: 18px; }
+
+/* ── IMAGE UPLOAD ── */
+.img-upload-area {
+  border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center;
+  cursor: pointer; color: var(--muted); font-size: 13px; transition: border-color .15s;
+}
+.img-upload-area:active { border-color: var(--gold); }
+.img-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px; display: none; }
+
+/* ── TOAST ── */
+.toast-wrap { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { background: var(--s1); border: 1px solid var(--border); border-radius: 30px; padding: 10px 20px; font-size: 13px; font-weight: 500; white-space: nowrap; animation: toastIn .25s ease; display: flex; align-items: center; gap: 6px; }
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error   { border-color: var(--danger);  color: var(--danger);  }
+@keyframes toastIn { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: none; } }
+
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-icon { font-size: 44px; margin-bottom: 10px; opacity: .4; }
+.empty-text { font-size: 14px; }
+
+/* ── WS INDICATOR ── */
+.ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.ws-dot.connected { background: var(--success); }
+
+.section-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.section-label { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="app-logo">Breiser<span>Markets</span></div>
+    <div class="header-right">
+      <div class="ws-dot" id="wsDot" title="Conexión tiempo real"></div>
+      <div class="market-chip" onclick="openMarketSelector()">
+        🏪 <strong id="marketChipName">Seleccionar</strong>
+      </div>
+      <div class="icon-btn" onclick="openAdmin()">⚙</div>
+    </div>
+  </div>
+
+  <!-- CART BAR -->
+  <div class="cart-bar hidden" id="cartBar" onclick="openCart()">
+    <div class="cart-bar-left">
+      🛒 <span class="cart-badge" id="cartCount">0</span> artículos
+    </div>
+    <div class="cart-bar-total" id="cartBarTotal">0.00 €</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('vender',this)">🛍 Vender</div>
+    <div class="tab" onclick="switchTab('ventas',this)">📋 Ventas</div>
+    <div class="tab" onclick="switchTab('stock',this)">📦 Stock</div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area">
+
+    <!-- VENDER -->
+    <div class="section active" id="tab-vender">
+      <div class="search-row">
+        <input class="search-input" type="text" placeholder="Buscar prenda…" id="searchInput" oninput="renderProducts()">
+        <select class="filter-sel" id="catFilter" onchange="renderProducts()">
+          <option value="">Todo</option>
+        </select>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <!-- VENTAS -->
+    <div class="section" id="tab-ventas">
+      <div class="section-top">
+        <span class="section-label">Registro</span>
+        <div class="btn-row">
+          <input type="date" id="dateFilter" onchange="renderSales()" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;outline:none;">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+      <div id="salesList"></div>
+    </div>
+
+    <!-- STOCK -->
+    <div class="section" id="tab-stock">
+      <div class="section-top">
+        <span class="section-label">Stock del market</span>
+      </div>
+      <div id="stockContent"></div>
+    </div>
+
+  </div><!-- /scroll-area -->
+</div><!-- /app -->
+
+<!-- CART SHEET -->
+<div class="sheet-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">🛒 Carrito</div>
+  <div class="sheet-scroll" id="cartItems"></div>
+  <div class="sheet-footer">
+    <div class="payment-toggle">
+      <div class="pay-opt cash active" onclick="selectPayment('cash')">💵 Efectivo</div>
+      <div class="pay-opt card" onclick="selectPayment('card')">💳 Tarjeta</div>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span class="total-val" id="sheetTotal">0.00 €</span>
+    </div>
+    <button class="btn btn-primary" onclick="checkout()">✔ Confirmar venta</button>
+  </div>
+</div>
+
+<!-- MARKET SELECTOR -->
+<div class="modal-overlay" id="marketModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Selecciona el market</div>
+    <div class="market-list" id="marketList"></div>
+    <div style="margin-top:14px">
+      <div class="field">
+        <label>Nuevo market</label>
+        <input type="text" id="newMarketName" placeholder="Nombre del market…">
+      </div>
+      <button class="btn btn-ghost" onclick="createMarket()">+ Añadir market</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SHEET -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙ Administración</div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">Prendas</div>
+      <button class="btn btn-primary" style="margin-bottom:12px" onclick="openAddProduct()">+ Nueva prenda</button>
+      <div id="adminProductList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="productModalTitle">Nueva prenda</div>
+    <input type="hidden" id="pm-id">
+
+    <div class="field">
+      <label>Imagen</label>
+      <div class="img-upload-area" onclick="document.getElementById('imgInput').click()">
+        📷 Toca para subir foto
+        <img class="img-preview" id="imgPreview">
+      </div>
+      <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="previewImg(this)">
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" id="pm-name" placeholder="Camiseta básica…">
+    </div>
+    <div class="field">
+      <label>Categoría</label>
+      <input type="text" id="pm-cat" placeholder="Camiseta, Vestido…" list="catDL">
+      <datalist id="catDL"></datalist>
+    </div>
+    <div class="field">
+      <label>Precio (€)</label>
+      <input type="number" id="pm-price" step="0.01" min="0" placeholder="0.00">
+    </div>
+
+    <!-- Stock por market y talla -->
+    <div class="field" id="stockFields" style="display:none">
+      <label>Stock en este market por talla</label>
+      <div class="sizes-grid" id="sizeStockGrid"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct()" style="flex:1">Guardar</button>
+    </div>
+    <button class="btn btn-danger" id="deleteProductBtn" style="margin-top:10px;display:none" onclick="deleteProduct()">Eliminar prenda</button>
+  </div>
+</div>
+
+<!-- EDIT SALE MODAL -->
+<div class="modal-overlay" id="editSaleModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar venta</div>
+    <input type="hidden" id="esm-id">
+    <div class="field">
+      <label>Método de pago</label>
+      <select id="esm-payment">
+        <option value="cash">💵 Efectivo</option>
+        <option value="card">💳 Tarjeta</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('editSaleModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSaleEdit()" style="flex:1">Guardar</button>
+    </div>
+    <button class="btn btn-danger" style="margin-top:10px" onclick="deleteSaleConfirm()">🗑 Eliminar venta</button>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const API = 'https://breisermarket.duckdns.org';
+const WS_BASE = API.replace('http', 'ws');
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  market: null,       // {id, name}
+  products: [],       // all products
+  stock: [],          // [{id, market_id, product_id, size, qty, product_name, category, price, image_url}]
+  cart: [],           // [{product_id, product_name, size, qty, price, image_url}]
+  payment: 'cash',
+  ws: null,
+};
+
+// ── API HELPERS ───────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const res = await fetch(API + path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || res.statusText); }
+  return res.json();
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function connectWS() {
+  if (!state.market) return;
+  if (state.ws) state.ws.close();
+  const ws = new WebSocket(`${WS_BASE}/ws/${state.market.id}`);
+  state.ws = ws;
+  ws.onopen  = () => document.getElementById('wsDot').className = 'ws-dot connected';
+  ws.onclose = () => { document.getElementById('wsDot').className = 'ws-dot'; setTimeout(connectWS, 3000); };
+  ws.onerror = () => ws.close();
+  ws.onmessage = e => handleWS(JSON.parse(e.data));
+}
+
+function handleWS(msg) {
+  switch (msg.type) {
+    case 'stock_updated':
+      updateStockEntry(msg.product_id, msg.size, msg.qty);
+      renderProducts(); renderStockTab();
+      break;
+    case 'sale_completed':
+      msg.stock_updates.forEach(u => updateStockEntry(u.product_id, u.size, u.qty));
+      renderProducts(); renderStockTab(); renderSales();
+      break;
+    case 'sale_deleted':
+      msg.stock_updates.forEach(u => updateStockEntry(u.product_id, u.size, u.qty));
+      renderProducts(); renderStockTab(); renderSales();
+      break;
+    case 'product_created':
+      if (!state.products.find(p => p.id === msg.product.id)) state.products.push(msg.product);
+      renderProducts(); renderAdminProducts();
+      break;
+    case 'product_updated':
+      const idx = state.products.findIndex(p => p.id === msg.product.id);
+      if (idx >= 0) state.products[idx] = msg.product;
+      renderProducts(); renderAdminProducts();
+      break;
+    case 'product_deleted':
+      state.products = state.products.filter(p => p.id !== msg.product_id);
+      state.stock    = state.stock.filter(s => s.product_id !== msg.product_id);
+      renderProducts(); renderAdminProducts(); renderStockTab();
+      break;
+    case 'product_image':
+      const p = state.products.find(x => x.id === msg.product_id);
+      if (p) p.image_url = msg.image_url;
+      renderProducts(); renderAdminProducts();
+      break;
+    case 'market_created':
+      renderMarketList();
+      break;
+  }
+}
+
+function updateStockEntry(product_id, size, qty) {
+  const entry = state.stock.find(s => s.product_id === product_id && s.size === size);
+  if (entry) entry.qty = qty;
+  else if (qty > 0) {
+    const prod = state.products.find(p => p.id === product_id);
+    if (prod) state.stock.push({ product_id, size, qty, product_name: prod.name, category: prod.category, price: prod.price, image_url: prod.image_url, market_id: state.market?.id });
+  }
+  state.stock = state.stock.filter(s => s.qty > 0);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const [products, markets] = await Promise.all([
+    api('GET', '/products'),
+    api('GET', '/markets'),
+  ]);
+  state.products = products;
+  state._markets = markets;
+  refreshCatFilter();
+
+  const savedMarketId = localStorage.getItem('bm_market');
+  const savedMarket   = markets.find(m => m.id === savedMarketId);
+  if (savedMarket) await selectMarket(savedMarket, false);
+  else openMarketSelector();
+}
+
+// ── MARKET ────────────────────────────────────────────────────────────────────
+function openMarketSelector() {
+  renderMarketList();
+  openModal('marketModal');
+}
+
+async function renderMarketList() {
+  const markets = await api('GET', '/markets');
+  state._markets = markets;
+  document.getElementById('marketList').innerHTML = markets.map(m => `
+    <div class="market-opt ${state.market?.id === m.id ? 'selected' : ''}" onclick="selectMarket(${JSON.stringify(m).replace(/"/g,"'")})">
+      <span class="market-opt-name">${m.name}</span>
+      ${state.market?.id === m.id ? '<span class="market-opt-check">✔</span>' : ''}
+    </div>`).join('');
+}
+
+async function selectMarket(market, close = true) {
+  state.market = market;
+  localStorage.setItem('bm_market', market.id);
+  document.getElementById('marketChipName').textContent = market.name;
+  state.stock = await api('GET', `/stock/${market.id}`);
+  connectWS();
+  renderProducts();
+  renderStockTab();
+  if (close) closeModal('marketModal');
+}
+
+async function createMarket() {
+  const name = document.getElementById('newMarketName').value.trim();
+  if (!name) return;
+  const m = await api('POST', '/markets', { name });
+  document.getElementById('newMarketName').value = '';
+  await selectMarket(m);
+  toast(`Market "${name}" creado ✔`, 'success');
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────────────────────────
+function getProductStock(product_id) {
+  return state.stock.filter(s => s.product_id === product_id);
+}
+
+function renderProducts() {
+  if (!state.market) {
+    document.getElementById('productGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏪</div><div class="empty-text">Selecciona un market</div></div>`;
+    return;
+  }
+  const q   = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+
+  // Get products that have stock in this market
+  const stockProductIds = [...new Set(state.stock.map(s => s.product_id))];
+  let prods = state.products.filter(p =>
+    stockProductIds.includes(p.id) &&
+    p.name.toLowerCase().includes(q) &&
+    (!cat || p.category === cat)
+  );
+
+  if (!prods.length) {
+    document.getElementById('productGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👗</div><div class="empty-text">Sin prendas disponibles</div></div>`;
+    return;
+  }
+
+  document.getElementById('productGrid').innerHTML = prods.map(p => {
+    const stocks = getProductStock(p.id);
+    const imgSrc = p.image_url ? API + p.image_url : null;
+    const sizeChips = stocks.map(s => {
+      const inCart = state.cart.find(c => c.product_id === p.id && c.size === s.size);
+      return `<div class="size-chip ${s.qty<=0?'oos':''} ${inCart?'in-cart':''}"
+                   onclick="addToCart('${p.id}','${s.size}')">
+                ${s.size}
+                <span class="sc-stock">${s.qty}</span>
+              </div>`;
+    }).join('');
+
+    return `<div class="product-card">
+      <div class="product-img">
+        ${imgSrc ? `<img src="${imgSrc}" loading="lazy" alt="${p.name}">` : `<span class="no-img">👗</span>`}
+      </div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-cat">${p.category}</div>
+        <div class="product-price">${p.price.toFixed(2)} €</div>
+      </div>
+      <div class="size-chips">${sizeChips || '<span style="font-size:11px;color:var(--muted);padding:0 0 6px">Sin stock</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function refreshCatFilter() {
+  const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))];
+  const sel  = document.getElementById('catFilter');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Todo</option>' + cats.map(c => `<option ${c===prev?'selected':''} value="${c}">${c}</option>`).join('');
+  const dl = document.getElementById('catDL');
+  if (dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+}
+
+// ── CART ──────────────────────────────────────────────────────────────────────
+function addToCart(product_id, size) {
+  if (!state.market) { toast('Selecciona un market primero', 'error'); return; }
+  const stockEntry = state.stock.find(s => s.product_id === product_id && s.size === size);
+  if (!stockEntry || stockEntry.qty <= 0) return;
+
+  const existing = state.cart.find(c => c.product_id === product_id && c.size === size);
+  const cartQty  = existing ? existing.qty : 0;
+  if (cartQty >= stockEntry.qty) { toast('Sin más stock disponible', 'error'); return; }
+
+  if (existing) {
+    existing.qty++;
+  } else {
+    const prod = state.products.find(p => p.id === product_id);
+    state.cart.push({ product_id, product_name: prod.name, size, qty: 1, price: prod.price, image_url: prod.image_url });
+  }
+  updateCartBar();
+  renderProducts();
+  toast(`${stockEntry.product_name || ''} (${size}) añadido`, 'success');
+}
+
+function updateCartBar() {
+  const total = state.cart.reduce((a, c) => a + c.qty * c.price, 0);
+  const count = state.cart.reduce((a, c) => a + c.qty, 0);
+  document.getElementById('cartCount').textContent   = count;
+  document.getElementById('cartBarTotal').textContent = total.toFixed(2) + ' €';
+  document.getElementById('sheetTotal').textContent   = total.toFixed(2) + ' €';
+  document.getElementById('cartBar').classList.toggle('hidden', count === 0);
+}
+
+function openCart() {
+  renderCartItems();
+  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartSheet').classList.add('open');
+}
+
+function closeCart() {
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.getElementById('cartSheet').classList.remove('open');
+}
+
+function renderCartItems() {
+  if (!state.cart.length) {
+    document.getElementById('cartItems').innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">El carrito está vacío</div></div>`;
+    return;
+  }
+  document.getElementById('cartItems').innerHTML = state.cart.map((c, i) => {
+    const imgSrc = c.image_url ? API + c.image_url : null;
+    return `<div class="cart-item">
+      <div class="cart-thumb">
+        ${imgSrc ? `<img src="${imgSrc}" alt="">` : '👗'}
+      </div>
+      <div class="cart-info">
+        <div class="cart-name">${c.product_name}</div>
+        <div class="cart-size">Talla ${c.size}</div>
+        <div class="cart-price">${c.price.toFixed(2)} € × ${c.qty} = ${(c.price*c.qty).toFixed(2)} €</div>
+      </div>
+      <div class="cart-qty-ctrl">
+        <div class="qty-btn" onclick="changeCartQty(${i},-1)">−</div>
+        <div class="qty-val">${c.qty}</div>
+        <div class="qty-btn" onclick="changeCartQty(${i},1)">+</div>
+        <div class="remove-btn" onclick="removeCartItem(${i})">🗑</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateCartBar();
+}
+
+function changeCartQty(i, delta) {
+  const c = state.cart[i];
+  const stockEntry = state.stock.find(s => s.product_id === c.product_id && s.size === c.size);
+  const newQty = c.qty + delta;
+  if (newQty < 1) { removeCartItem(i); return; }
+  if (stockEntry && newQty > stockEntry.qty) { toast('Sin más stock', 'error'); return; }
+  state.cart[i].qty = newQty;
+  renderCartItems();
+}
+
+function removeCartItem(i) {
+  state.cart.splice(i, 1);
+  renderCartItems();
+  renderProducts();
+}
+
+function selectPayment(type) {
+  state.payment = type;
+  document.querySelectorAll('.pay-opt').forEach(el => {
+    el.classList.remove('active');
+    el.classList.toggle('active', el.classList.contains(type));
+  });
+}
+
+async function checkout() {
+  if (!state.cart.length) return;
+  try {
+    await api('POST', '/sales', {
+      market_id: state.market.id,
+      payment: state.payment,
+      items: state.cart.map(c => ({ product_id: c.product_id, size: c.size, qty: c.qty, price: c.price }))
+    });
+    state.cart = [];
+    updateCartBar();
+    closeCart();
+    renderProducts();
+    toast('¡Venta registrada! ✔', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ── SALES ─────────────────────────────────────────────────────────────────────
+async function renderSales() {
+  if (!state.market) return;
+  const date  = document.getElementById('dateFilter').value;
+  const url   = `/sales/${state.market.id}` + (date ? `?date=${date}` : '');
+  const sales = await api('GET', url);
+
+  const byDay = {};
+  sales.forEach(s => { (byDay[s.date] = byDay[s.date] || []).push(s); });
+
+  if (!Object.keys(byDay).length) {
+    document.getElementById('salesList').innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">${date?'Sin ventas ese día':'Sin ventas registradas'}</div></div>`;
+    return;
+  }
+
+  document.getElementById('salesList').innerHTML = Object.entries(byDay).map(([date, daySales]) => {
+    const dayTotal = daySales.reduce((a, s) => a + s.total, 0);
+    const cashTotal = daySales.filter(s => s.payment === 'cash').reduce((a, s) => a + s.total, 0);
+    const cardTotal = daySales.filter(s => s.payment === 'card').reduce((a, s) => a + s.total, 0);
+
+    const cards = daySales.map(s => {
+      const itemsHTML = s.items.map(it => {
+        const imgSrc = it.image_url ? API + it.image_url : null;
+        return `<div class="sale-item-row">
+          <div class="sale-item-thumb">${imgSrc ? `<img src="${imgSrc}">` : '👗'}</div>
+          <div class="sale-item-info">
+            <div class="sale-item-name">${it.product_name}</div>
+            <div class="sale-item-detail">Talla ${it.size} × ${it.qty}</div>
+          </div>
+          <div class="sale-item-price">${(it.qty*it.price).toFixed(2)} €</div>
+        </div>`;
+      }).join('');
+
+      return `<div class="sale-card">
+        <div class="sale-header" onclick="toggleSaleItems(this)">
+          <div>
+            <div class="sale-time">${s.time}</div>
+            <span class="pay-badge ${s.payment}">${s.payment==='cash'?'💵 Efectivo':'💳 Tarjeta'}</span>
+          </div>
+          <div class="sale-total">${s.total.toFixed(2)} €</div>
+        </div>
+        <div class="sale-items-list" style="display:none">${itemsHTML}
+          <div class="sale-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openEditSale('${s.id}','${s.payment}')">✏ Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSaleFromList('${s.id}')">🗑 Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="day-header">
+        ${formatDate(date)}
+        <span class="day-summary">${dayTotal.toFixed(2)} € · 💵${cashTotal.toFixed(0)} 💳${cardTotal.toFixed(0)}</span>
+      </div>${cards}`;
+  }).join('');
+}
+
+function toggleSaleItems(el) {
+  const list = el.nextElementSibling;
+  list.style.display = list.style.display === 'none' ? 'block' : 'none';
+}
+
+function openEditSale(id, payment) {
+  document.getElementById('esm-id').value     = id;
+  document.getElementById('esm-payment').value = payment;
+  openModal('editSaleModal');
+}
+
+async function saveSaleEdit() {
+  const id      = document.getElementById('esm-id').value;
+  const payment = document.getElementById('esm-payment').value;
+  await api('PUT', `/sales/${id}`, { payment });
+  closeModal('editSaleModal');
+  renderSales();
+  toast('Venta actualizada ✔', 'success');
+}
+
+async function deleteSaleConfirm() {
+  const id = document.getElementById('esm-id').value;
+  if (!confirm('¿Eliminar esta venta? El stock se restaurará.')) return;
+  await api('DELETE', `/sales/${id}`);
+  closeModal('editSaleModal');
+  renderSales();
+  toast('Venta eliminada', 'error');
+}
+
+async function deleteSaleFromList(id) {
+  if (!confirm('¿Eliminar esta venta? El stock se restaurará.')) return;
+  await api('DELETE', `/sales/${id}`);
+  renderSales();
+  renderProducts();
+  toast('Venta eliminada', 'error');
+}
+
+async function exportCSV() {
+  if (!state.market) return;
+  const date = document.getElementById('dateFilter').value;
+  window.open(API + `/export/${state.market.id}/csv` + (date?`?date=${date}`:''));
+}
+
+// ── STOCK TAB ─────────────────────────────────────────────────────────────────
+function renderStockTab() {
+  if (!state.market) return;
+  if (!state.stock.length) {
+    document.getElementById('stockContent').innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Sin stock en este market</div></div>`;
+    return;
+  }
+  // Group by product
+  const byProd = {};
+  state.stock.forEach(s => {
+    if (!byProd[s.product_id]) byProd[s.product_id] = { name: s.product_name, image_url: s.image_url, sizes: [] };
+    byProd[s.product_id].sizes.push({ size: s.size, qty: s.qty });
+  });
+
+  const rows = Object.entries(byProd).map(([pid, p]) => {
+    const imgSrc = p.image_url ? API + p.image_url : null;
+    const sizesHTML = p.sizes.map(s => `<span style="background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px">${s.size}: ${s.qty}</span>`).join('');
+    return `<tr>
+      <td><div class="stock-thumb">${imgSrc?`<img src="${imgSrc}" alt="">`:'👗'}</div></td>
+      <td style="font-weight:600;font-size:13px">${p.name}</td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:4px">${sizesHTML}</div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('stockContent').innerHTML = `<table class="stock-table">
+    <thead><tr><th></th><th>Prenda</th><th>Tallas</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ── ADMIN / PRODUCTS ──────────────────────────────────────────────────────────
+function openAdmin() {
+  renderAdminProducts();
+  openModal('adminModal');
+}
+
+function renderAdminProducts() {
+  document.getElementById('adminProductList').innerHTML = state.products.map(p => {
+    const imgSrc = p.image_url ? API + p.image_url : null;
+    return `<div class="product-admin-card">
+      <div class="product-admin-thumb">${imgSrc?`<img src="${imgSrc}" alt="">`:'👗'}</div>
+      <div class="product-admin-info">
+        <div class="product-admin-name">${p.name}</div>
+        <div class="product-admin-meta">${p.category} · ${p.price.toFixed(2)} €</div>
+      </div>
+      <div class="product-admin-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditProduct('${p.id}')">✏</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty"><div class="empty-text">Sin prendas</div></div>';
+}
+
+let _editingProductId = null;
+let _imgFile = null;
+
+function openAddProduct() {
+  _editingProductId = null;
+  _imgFile = null;
+  document.getElementById('productModalTitle').textContent = 'Nueva prenda';
+  document.getElementById('pm-id').value    = '';
+  document.getElementById('pm-name').value  = '';
+  document.getElementById('pm-cat').value   = '';
+  document.getElementById('pm-price').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('deleteProductBtn').style.display = 'none';
+  if (state.market) {
+    document.getElementById('stockFields').style.display = 'block';
+    buildSizeInputs({});
+  } else {
+    document.getElementById('stockFields').style.display = 'none';
+  }
+  openModal('productModal');
+}
+
+function openEditProduct(id) {
+  const p = state.products.find(x => x.id === id);
+  _editingProductId = id;
+  _imgFile = null;
+  document.getElementById('productModalTitle').textContent = 'Editar prenda';
+  document.getElementById('pm-id').value    = id;
+  document.getElementById('pm-name').value  = p.name;
+  document.getElementById('pm-cat').value   = p.category;
+  document.getElementById('pm-price').value = p.price;
+  const prev = document.getElementById('imgPreview');
+  if (p.image_url) { prev.src = API + p.image_url; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+  document.getElementById('deleteProductBtn').style.display = 'flex';
+
+  // Load current stock for this market
+  const currentStock = {};
+  if (state.market) {
+    state.stock.filter(s => s.product_id === id).forEach(s => { currentStock[s.size] = s.qty; });
+    document.getElementById('stockFields').style.display = 'block';
+    buildSizeInputs(currentStock);
+  } else {
+    document.getElementById('stockFields').style.display = 'none';
+  }
+  openModal('productModal');
+}
+
+const SIZES = ['XXS','XS','S','M','L','XL','XXL','XXXL','34','36','38','40','42','44','46','48','Única'];
+
+function buildSizeInputs(currentStock) {
+  document.getElementById('sizeStockGrid').innerHTML = SIZES.map(s => `
+    <div class="size-row">
+      <label>${s}</label>
+      <input type="number" min="0" placeholder="0" value="${currentStock[s]||''}" data-size="${s}" class="size-inp">
+    </div>`).join('');
+}
+
+function previewImg(input) {
+  _imgFile = input.files[0];
+  if (_imgFile) {
+    const reader = new FileReader();
+    reader.onload = e => { const prev = document.getElementById('imgPreview'); prev.src = e.target.result; prev.style.display = 'block'; };
+    reader.readAsDataURL(_imgFile);
+  }
+}
+
+async function saveProduct() {
+  const name  = document.getElementById('pm-name').value.trim();
+  const cat   = document.getElementById('pm-cat').value.trim();
+  const price = parseFloat(document.getElementById('pm-price').value);
+  if (!name || isNaN(price) || price <= 0) { toast('Rellena nombre y precio', 'error'); return; }
+
+  let pid = _editingProductId;
+
+  if (!pid) {
+    const prod = await api('POST', '/products', { name, category: cat, price });
+    pid = prod.id;
+    state.products.push(prod);
+  } else {
+    const prod = await api('PUT', `/products/${pid}`, { name, category: cat, price });
+    const idx  = state.products.findIndex(p => p.id === pid);
+    if (idx >= 0) state.products[idx] = prod;
+  }
+
+  // Upload image
+  if (_imgFile) {
+    const fd = new FormData();
+    fd.append('file', _imgFile);
+    const res = await fetch(`${API}/products/${pid}/image`, { method: 'POST', body: fd });
+    const data = await res.json();
+    const p = state.products.find(x => x.id === pid);
+    if (p) p.image_url = data.image_url;
+  }
+
+  // Save stock if market selected
+  if (state.market) {
+    const inputs = document.querySelectorAll('.size-inp');
+    for (const inp of inputs) {
+      const qty = parseInt(inp.value) || 0;
+      const size = inp.dataset.size;
+      await api('POST', `/stock/${state.market.id}`, { product_id: pid, size, qty });
+      updateStockEntry(pid, size, qty);
+    }
+    state.stock = state.stock.filter(s => s.qty > 0);
+  }
+
+  refreshCatFilter();
+  renderProducts();
+  renderAdminProducts();
+  renderStockTab();
+  closeModal('productModal');
+  toast('Prenda guardada ✔', 'success');
+}
+
+async function deleteProduct() {
+  if (!confirm('¿Eliminar esta prenda?')) return;
+  await api('DELETE', `/products/${_editingProductId}`);
+  state.products = state.products.filter(p => p.id !== _editingProductId);
+  state.stock    = state.stock.filter(s => s.product_id !== _editingProductId);
+  closeModal('productModal');
+  renderProducts();
+  renderAdminProducts();
+  renderStockTab();
+  toast('Prenda eliminada', 'error');
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'ventas') renderSales();
+  if (name === 'stock')  renderStockTab();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init().catch(e => {
+  document.getElementById('productGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⚠️</div><div class="empty-text">No se puede conectar al servidor.<br><small style="color:var(--muted)">${e.message}</small></div></div>`;
+});
+</script>
+</body>
+</html>

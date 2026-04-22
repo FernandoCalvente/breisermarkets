@@ -1,0 +1,61 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BreiserMarkets
+# Coloca este archivo en /datos/breisermarkets/docker-compose.yml
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  breiser-backend:
+    build: ./backend
+    container_name: breiser-backend
+    restart: unless-stopped
+    volumes:
+      - breiser-data:/data
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+
+      # ── API ──────────────────────────────────────────────────────────────
+      - "traefik.http.routers.breiser-api.rule=Host(`breisermarket.duckdns.org`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.breiser-api.entrypoints=websecure"
+      - "traefik.http.routers.breiser-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.breiser-api.middlewares=breiser-strip"
+      - "traefik.http.middlewares.breiser-strip.stripprefix.prefixes=/api"
+      - "traefik.http.services.breiser-api.loadbalancer.server.port=8000"
+
+      # ── WebSocket ─────────────────────────────────────────────────────────
+      - "traefik.http.routers.breiser-ws.rule=Host(`breisermarket.duckdns.org`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.breiser-ws.entrypoints=websecure"
+      - "traefik.http.routers.breiser-ws.tls.certresolver=myresolver"
+      - "traefik.http.services.breiser-ws.loadbalancer.server.port=8000"
+
+      # ── Imágenes ──────────────────────────────────────────────────────────
+      - "traefik.http.routers.breiser-img.rule=Host(`breisermarket.duckdns.org`) && PathPrefix(`/images`)"
+      - "traefik.http.routers.breiser-img.entrypoints=websecure"
+      - "traefik.http.routers.breiser-img.tls.certresolver=myresolver"
+      - "traefik.http.services.breiser-img.loadbalancer.server.port=8000"
+
+  breiser-frontend:
+    image: nginx:alpine
+    container_name: breiser-frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend/html:/usr/share/nginx/html:ro
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.breiser-app.rule=Host(`breisermarket.duckdns.org`)"
+      - "traefik.http.routers.breiser-app.entrypoints=websecure"
+      - "traefik.http.routers.breiser-app.tls.certresolver=myresolver"
+      - "traefik.http.services.breiser-app.loadbalancer.server.port=80"
+
+volumes:
+  breiser-data:
+
+networks:
+  web:
+    external: true
